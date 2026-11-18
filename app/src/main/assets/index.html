@@ -11,7 +11,9 @@
   html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--fg);
     font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif; -webkit-user-select:none; user-select:none; }
   #app { display:flex; width:100vw; height:100vh; }
-  #left,#right { width:50vw; height:100vh; padding:2vh 1.6vw; display:flex; flex-direction:column; }
+  :root { --lw:40vw; }
+  #left { width:var(--lw); } #right { width:calc(100vw - var(--lw)); }
+  #left,#right { height:100vh; padding:2vh 1.6vw; display:flex; flex-direction:column; }
   #left { border-right:.4vh solid var(--line); }
 
   /* 좌측 */
@@ -31,10 +33,10 @@
   .bh { display:flex; align-items:baseline; justify-content:space-between; font-size:2.7vh; font-weight:800; padding:.7vh .6vw .5vh; }
   .bh em { font-style:normal; font-size:2.3vh; color:var(--dim); font-weight:700; font-variant-numeric:tabular-nums; }
   .row { display:flex; align-items:center; gap:1vw; padding:.8vh .6vw; border-radius:1.1vh; border:.35vh solid transparent; line-height:1.2; }
-  .row .t { width:5.8vw; font-size:2.7vh; color:var(--dim); font-variant-numeric:tabular-nums; }
+  .row .t { width:6.4vw; font-size:2.7vh; color:var(--dim); font-variant-numeric:tabular-nums; }
   .row .w { flex:1; font-size:3.4vh; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .row .r { font-size:3.2vh; font-weight:800; white-space:nowrap; }
-  .row .k { min-width:7.4vw; text-align:right; font-size:2.2vh; font-weight:800; white-space:nowrap; }
+  .row .k { min-width:6.6vw; text-align:right; font-size:2.2vh; font-weight:800; white-space:nowrap; }
   .row .k b { display:inline-block; padding:.2vh .9vw; border-radius:5vh; font-weight:800; }
   .row.done { opacity:.5; } .row.done .k { color:var(--ok); font-size:3vh; }
   .row.next { background:var(--bg); border-color:var(--fg); } .row.next .k b { border:.3vh solid var(--fg); }
@@ -282,11 +284,13 @@
 
   // 긴 세트 이름은 한 줄에 들어갈 때까지 글자 크기를 줄인다 (기본 화면 높이의 9%, 최소 5%)
   function fitNext(el, text, hi, lo) {
-    if (el.getAttribute('data-t') === text) return;
-    el.setAttribute('data-t', text); el.textContent = text;
+    var key = text + '|' + el.clientWidth;
+    if (el.getAttribute('data-t') === key) return;
+    el.setAttribute('data-t', key); el.textContent = '';
+    var sp = document.createElement('span'); sp.textContent = text; sp.style.whiteSpace = 'nowrap'; el.appendChild(sp);
     var px = window.innerHeight * (hi || 0.06), min = window.innerHeight * (lo || 0.04);
     el.style.fontSize = px + 'px';
-    while (el.scrollWidth > el.clientWidth && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
+    while (sp.offsetLeft + sp.offsetWidth > el.clientWidth && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
   }
 
   // 동작(큐) 박스: 박스를 넘치면 글자 크기를 줄인다 (기본 5.5%, 최소 3.2%)
@@ -482,9 +486,10 @@
   }
   // 화면 크기가 바뀌면 글자 크기 캐시를 비우고 다시 계산 (px 기준 자동 축소 때문)
   window.addEventListener('resize', function () {
-    ['next', 'cue', 'count'].forEach(function (id) { var el = $(id); el.removeAttribute('data-t'); el.removeAttribute('data-n'); });
+    ['cur', 'next', 'curcue', 'count'].forEach(function (id) { var el = $(id); if (el) { el.removeAttribute('data-t'); el.removeAttribute('data-n'); } });
     if (prog) { lastCur = -2; render(); }
   });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { window.dispatchEvent(new Event('resize')); });
   loadProgram();
 })();
 </script>
