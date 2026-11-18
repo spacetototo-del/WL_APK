@@ -42,11 +42,19 @@
 
   /* 우측 */
   #right { justify-content:space-between; }
-  #cur { font-size:3vh; color:var(--dim); min-height:3.6vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #curcue { font-size:2.6vh; color:var(--dim); min-height:3vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #nextlab { font-size:2.6vh; color:var(--dim); margin-top:.6vh; }
+  #nowbox { flex:4; min-height:0; display:flex; flex-direction:column; background:var(--hi); color:var(--hi-fg); border-radius:1.4vh; padding:1vh 1.2vw 1.1vh; }
+  #nowbox.idle { background:none; color:var(--dim); padding:.4vh 0; }
+  #lower { flex:6; min-height:0; display:flex; flex-direction:column; justify-content:space-between; }
+  #cur { font-size:8vh; line-height:1.15; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:.9vw; }
+  #cur:before { content:'지금'; flex:none; font-size:2.6vh; font-weight:800; background:var(--hi-fg); color:var(--hi); padding:.3vh 1vw; border-radius:5vh; }
+  #nowbox.idle #cur { font-size:3vh; font-weight:600; } #nowbox.idle #cur:before { display:none; }
+  #curcue { flex:1; min-height:0; margin-top:.8vh; display:flex; align-items:center; overflow:hidden; font-size:5vh; font-weight:700; line-height:1.3; }
+  #curcue span { display:block; width:100%; word-break:keep-all; white-space:pre-line; }
+  #nextlab { display:flex; align-items:center; gap:.9vw; font-size:2.6vh; font-weight:700; color:var(--fg); margin-top:.4vh; }
+  #nextlab:before { content:'다음'; flex:none; font-size:2.3vh; font-weight:800; background:var(--fg); color:var(--bg); padding:.3vh 1vw; border-radius:5vh; }
+  #nextlab.last:before { display:none; }
   #nextlab b { color:var(--bad); font-weight:800; margin-left:.8vw; }
-  #next { font-size:9vh; font-weight:800; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #next { font-size:6vh; font-weight:800; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #main { flex:1; min-height:0; display:flex; flex-direction:column; }
   #cue { flex:1; min-height:0; margin-top:1vh; padding:1.2vh 1.4vw; display:flex; align-items:center; overflow:hidden;
     font-size:5.5vh; font-weight:700; line-height:1.3; background:var(--panel); border-left:1vh solid var(--fg); border-radius:1vh; }
@@ -57,10 +65,11 @@
   #bar { height:2.4vh; background:var(--panel); border-radius:1.2vh; overflow:hidden; }
   #bar i { display:block; height:100%; width:0; background:var(--ok); }
   #bar.warn i { background:var(--warn); } #bar.bad i { background:var(--bad); }
-  #after { font-size:3vh; margin-top:1.6vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #after { display:none; font-size:3vh; margin-top:1.6vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #stop { font-size:2.5vh; color:var(--bad); font-weight:700; margin-top:.8vh; line-height:1.25; }
   #ctrl { display:flex; gap:.6vw; margin-top:1.4vh; }
   #ctrl button { flex:1; min-width:0; white-space:nowrap; font:inherit; font-size:2.2vh; padding:1.3vh 0; background:var(--panel); color:var(--fg); border:.3vh solid var(--line); border-radius:1vh; }
+  #ctrl button.bk { flex:1.8; font-weight:700; }
   #ctrl button.go { flex:2.2; background:var(--fg); color:var(--bg); font-weight:700; }
   #ctrl button.sm { flex:1; color:var(--dim); }
   #ctrl button:active { opacity:.6; }
@@ -86,15 +95,15 @@
   </section>
   <section id="right">
     <div id="main">
-      <div id="cur"></div>
-      <div id="curcue"></div>
-      <div id="nextlab">다음</div>
-      <div id="next">-</div>
-      <div id="cue"></div>
-      <div id="count">--:--</div>
-      <div id="bar"><i></i></div>
-      <div id="after"></div>
-      <div id="stop"></div>
+      <div id="nowbox"><div id="cur"></div><div id="curcue"></div></div>
+      <div id="lower">
+        <div><div id="nextlab"></div>
+        <div id="next">-</div></div>
+        <div id="count">--:--</div>
+        <div id="bar"><i></i></div>
+        <div id="after"></div>
+        <div id="stop"></div>
+      </div>
     </div>
     <div id="fin"><b>종료 · 수고하셨습니다</b><span id="finsum"></span></div>
     <div id="undo"><span>시간이 조정됨</span><button id="undoBtn">되돌리기</button></div>
@@ -102,7 +111,8 @@
       <button data-d="-60">-1분</button>
       <button data-d="60">+1분</button>
       <button data-d="300">+5분</button>
-      <button class="go" id="go">다음 세트 시작</button>
+      <button class="bk" id="prev">◀ 이전 세트</button>
+      <button class="go" id="go">다음 세트 시작 ▶</button>
       <button class="sm" id="reh">리허설</button>
       <button class="sm" id="imp">파일</button>
       <button class="sm" id="dk">다크</button>
@@ -271,22 +281,22 @@
   }
 
   // 긴 세트 이름은 한 줄에 들어갈 때까지 글자 크기를 줄인다 (기본 화면 높이의 9%, 최소 5%)
-  function fitNext(el, text) {
+  function fitNext(el, text, hi, lo) {
     if (el.getAttribute('data-t') === text) return;
     el.setAttribute('data-t', text); el.textContent = text;
-    var px = window.innerHeight * 0.09, min = window.innerHeight * 0.05;
+    var px = window.innerHeight * (hi || 0.06), min = window.innerHeight * (lo || 0.04);
     el.style.fontSize = px + 'px';
     while (el.scrollWidth > el.clientWidth && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
   }
 
   // 동작(큐) 박스: 박스를 넘치면 글자 크기를 줄인다 (기본 5.5%, 최소 3.2%)
-  function fitCue(el, text) {
+  function fitCue(el, text, hi, lo) {
     var k = text + '|' + el.clientHeight;                       // 박스 높이가 바뀌어도 다시 맞춘다
     if (el.getAttribute('data-t') === k) return;
     el.setAttribute('data-t', k); el.textContent = '';
     if (!text) return;
     var sp = document.createElement('span'); sp.textContent = text; el.appendChild(sp);
-    var px = window.innerHeight * 0.055, min = window.innerHeight * 0.032;
+    var px = window.innerHeight * (hi || 0.055), min = window.innerHeight * (lo || 0.032);
     el.style.fontSize = px + 'px';
     while (sp.offsetHeight > el.clientHeight - 2 && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
   }
@@ -334,14 +344,15 @@
     $('warn').style.display = (virt === null && prog.date !== todayStr()) ? 'inline-block' : 'none';   // 어제 파일 등 날짜 불일치 경고
     if (ended) { $('finsum').textContent = '완료 세트 ' + n + '/' + n; return; }
 
-    $('cur').textContent = cur >= 0 ? '진행 중: ' + name(S[cur]) : '대기 중';
-    $('curcue').textContent = cur >= 0 && S[cur].cue ? '지금 큐: ' + S[cur].cue : '';
+    if (cur >= 0) fitNext($('cur'), name(S[cur]), 0.08, 0.045); else { $('cur').removeAttribute('data-t'); $('cur').style.fontSize = ''; $('cur').textContent = '대기 중'; }
+    fitCue($('curcue'), cur >= 0 && S[cur].cue ? S[cur].cue : '', 0.06, 0.032);
+    $('nowbox').className = cur >= 0 ? '' : 'idle';
+    $('nextlab').className = '';
     var rem, frac;
     if (nxt < n) {
       var chg = cur < 0 || S[cur].block !== S[nxt].block;       // 블록이 바뀌면 알림
-      $('nextlab').innerHTML = '다음 · ' + hm(start(nxt)) + ' 시작' + (chg ? '<b>새 블록 · ' + S[nxt].block + '</b>' : '');
+      $('nextlab').innerHTML = hm(start(nxt)) + ' 시작' + (chg ? '<b>새 블록 · ' + S[nxt].block + '</b>' : '');
       fitNext($('next'), name(S[nxt]));
-      fitCue($('cue'), (S[nxt].setup ? '준비: ' + S[nxt].setup + (S[nxt].cue ? '\n' : '') : '') + (S[nxt].cue || ''));
       rem = start(nxt) - now;
       var tk = Math.ceil(rem);                                    // 시작 3·2·1초 전 짧은 신호음 (초마다 한 번)
       if (tk >= 1 && tk <= 3 && lastTick !== nxt + ':' + tk) { lastTick = nxt + ':' + tk; beep(660, 0.12); }
@@ -350,9 +361,8 @@
       var aft = nxt + 1 < n ? S[nxt + 1] : null;
       $('after').textContent = aft ? '그다음: ' + name(aft) + ' · ' + hm(start(nxt + 1)) : '그다음: 없음 (마지막 세트)';
     } else {
-      $('nextlab').textContent = '마지막 세트 진행 중';
+      $('nextlab').className = 'last'; $('nextlab').textContent = '마지막 세트 진행 중';
       fitNext($('next'), '종료까지');
-      fitCue($('cue'), S[cur].cue || '');
       rem = endAdj - now;
       frac = (now - start(cur)) / (endAdj - start(cur));
       $('after').textContent = '';
@@ -423,6 +433,16 @@
     b.addEventListener('click', function () { adjust(parseInt(b.getAttribute('data-d'), 10)); });
   });
   $('go').addEventListener('click', startNow);
+  $('prev').addEventListener('click', function () {   // 잘못 넘겼을 때: 직전 세트를 지금 다시 시작, 이후 세트도 같은 만큼 뒤로
+    var t = nowSec(), cur = -1, i;
+    for (i = 0; i < S.length; i++) if (start(i) <= t) cur = i;
+    if (cur < 0) return;
+    var tgt = cur > 0 ? cur - 1 : 0;
+    pushUndo();
+    var d = Math.ceil(t) - start(tgt);
+    for (i = tgt; i < S.length; i++) off[i] += d;
+    saveOff(); render();
+  });
   // 리허설: 첫 세트 10초 전 시각으로 되돌려 처음부터 다시 진행. 다시 누르면 실시간.
   $('reh').addEventListener('click', function () {
     hideUndo();
