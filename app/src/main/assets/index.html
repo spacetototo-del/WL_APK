@@ -15,25 +15,43 @@
   #left { border-right:.4vh solid var(--line); }
 
   /* 좌측 */
-  #head { font-size:3.4vh; font-weight:700; padding-bottom:1.2vh; border-bottom:.4vh solid var(--fg); white-space:nowrap; }
-  #title { font-size:2.4vh; color:var(--dim); font-weight:500; padding:.6vh 0 .8vh; }
-  #list { flex:1; overflow:hidden; position:relative; }
-  #listin { transition:transform .4s; }
-  .blk { font-size:2.2vh; font-weight:700; letter-spacing:.1em; color:var(--dim); padding:1.1vh 0 .3vh; }
-  .row { display:flex; align-items:center; gap:1.2vw; font-size:3vh; line-height:1; padding:.85vh 1vw; border-radius:.8vh; }
-  .row .t { width:6.4vw; font-variant-numeric:tabular-nums; color:var(--dim); }
-  .row .w { flex:1; font-weight:600; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .row .k { width:2.4vw; text-align:center; color:var(--ok); font-weight:800; }
-  .row.done { color:var(--dim); } .row.done .w { font-weight:400; text-decoration:line-through; }
-  .row.cur { background:var(--hi); color:var(--hi-fg); font-weight:800; } .row.cur .t { color:var(--hi-fg); }
+  #top { display:flex; align-items:center; gap:1vw; white-space:nowrap; }
+  #date { font-size:4.6vh; font-weight:800; }
+  body.rehearsal #date::after { content:" 리허설"; font-size:2.4vh; font-weight:800; color:var(--bad); margin-left:.6vw; }
+  #chip { font-size:2.8vh; font-weight:800; background:var(--fg); color:var(--bg); padding:.3vh 1vw; border-radius:5vh; }
+  #rng { margin-left:auto; font-size:3.2vh; font-weight:700; color:var(--dim); font-variant-numeric:tabular-nums; }
+  #title { display:flex; justify-content:space-between; align-items:baseline; font-size:2.6vh; color:var(--dim); padding:.6vh 0 1vh; }
+  #pcount { font-weight:700; font-variant-numeric:tabular-nums; }
+  #prog { height:1vh; background:var(--panel); border-radius:.5vh; overflow:hidden; }
+  #prog i { display:block; height:100%; width:0; background:var(--ok); transition:width .4s; }
+  #list { flex:1; overflow:hidden; position:relative; margin-top:1.4vh; }
+  #listin { position:relative; transition:transform .4s; }
+  .card { background:var(--panel); border-radius:1.6vh; padding:.7vh .7vw .6vh; margin-bottom:1.3vh; }
+  .bh { display:flex; align-items:baseline; justify-content:space-between; font-size:2.7vh; font-weight:800; padding:.7vh .6vw .5vh; }
+  .bh em { font-style:normal; font-size:2.3vh; color:var(--dim); font-weight:700; font-variant-numeric:tabular-nums; }
+  .row { display:flex; align-items:center; gap:1vw; padding:.8vh .6vw; border-radius:1.1vh; border:.35vh solid transparent; line-height:1.2; }
+  .row .t { width:5.8vw; font-size:2.7vh; color:var(--dim); font-variant-numeric:tabular-nums; }
+  .row .w { flex:1; font-size:3.4vh; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .r { font-size:3.2vh; font-weight:800; white-space:nowrap; }
+  .row .k { min-width:7.4vw; text-align:right; font-size:2.2vh; font-weight:800; white-space:nowrap; }
+  .row .k b { display:inline-block; padding:.2vh .9vw; border-radius:5vh; font-weight:800; }
+  .row.done { opacity:.5; } .row.done .k { color:var(--ok); font-size:3vh; }
+  .row.next { background:var(--bg); border-color:var(--fg); } .row.next .k b { border:.3vh solid var(--fg); }
+  .row.cur { background:var(--hi); color:var(--hi-fg); } .row.cur .t { color:var(--hi-fg); } .row.cur .k b { background:var(--hi-fg); color:var(--hi); }
 
   /* 우측 */
   #right { justify-content:space-between; }
   #cur { font-size:3vh; color:var(--dim); min-height:3.6vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #nextlab { font-size:2.6vh; color:var(--dim); margin-top:1vh; }
+  #curcue { font-size:2.6vh; color:var(--dim); min-height:3vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #nextlab { font-size:2.6vh; color:var(--dim); margin-top:.6vh; }
+  #nextlab b { color:var(--bad); font-weight:800; margin-left:.8vw; }
   #next { font-size:9vh; font-weight:800; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #cue { font-size:3.2vh; min-height:4.2vh; margin-top:.4vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #count { font-size:24vh; font-weight:800; line-height:1; text-align:center; font-variant-numeric:tabular-nums; margin:1vh 0; }
+  #main { flex:1; min-height:0; display:flex; flex-direction:column; }
+  #cue { flex:1; min-height:0; margin-top:1vh; padding:1.2vh 1.4vw; display:flex; align-items:center; overflow:hidden;
+    font-size:5.5vh; font-weight:700; line-height:1.3; background:var(--panel); border-left:1vh solid var(--fg); border-radius:1vh; }
+  #cue:empty { background:none; border-left-color:transparent; }
+  #cue span { display:block; width:100%; word-break:keep-all; white-space:pre-line; }
+  #count { font-size:24vh; white-space:nowrap; overflow:hidden; font-weight:800; line-height:1; text-align:center; font-variant-numeric:tabular-nums; margin:1vh 0; }
   #count.warn { color:var(--warn); } #count.bad { color:var(--bad); }
   #bar { height:2.4vh; background:var(--panel); border-radius:1.2vh; overflow:hidden; }
   #bar i { display:block; height:100%; width:0; background:var(--ok); }
@@ -54,13 +72,15 @@
 <body>
 <div id="app">
   <section id="left">
-    <div id="head">-</div>
-    <div id="title"></div>
+    <div id="top"><span id="date">-</span><span id="chip"></span><span id="rng"></span></div>
+    <div id="title"><span id="ttl"></span><span id="pcount"></span></div>
+    <div id="prog"><i></i></div>
     <div id="list"></div>
   </section>
   <section id="right">
     <div id="main">
       <div id="cur"></div>
+      <div id="curcue"></div>
       <div id="nextlab">다음</div>
       <div id="next">-</div>
       <div id="cue"></div>
@@ -75,6 +95,7 @@
       <button data-d="60">+1분</button>
       <button data-d="300">+5분</button>
       <button class="go" id="go">다음 세트 지금 시작</button>
+      <button class="sm" id="reh">리허설</button>
       <button class="sm" id="imp">파일</button>
     </div>
   </section>
@@ -100,7 +121,7 @@
     if (window.Android && Android.getProgram) {
       try { cb(JSON.parse(Android.getProgram())); } catch (e) { fail('program.json 오류'); }
     } else {
-      fetch('program.json').then(function (r) { return r.json(); }).then(cb).catch(function () { fail('program.json 로드 실패'); });
+      fetch('program.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(cb).catch(function () { fail('program.json 로드 실패'); });
     }
   }
   function key() { return 'adj-' + prog.date; }
@@ -115,19 +136,31 @@
   function weight(s) { return (s.kg != null ? s.kg + 'kg' : s.label) + ' x ' + s.reps; }
   function name(s) { return s.block + ' ' + weight(s); }
   function hm(sec) { sec = Math.round(sec / 60) * 60; return Math.floor(sec / 3600) + ':' + ('0' + Math.floor(sec % 3600 / 60)).slice(-2); }
-  function mmss(sec) { sec = Math.max(0, Math.ceil(sec)); return ('0' + Math.floor(sec / 60)).slice(-2) + ':' + ('0' + sec % 60).slice(-2); }
+  function mmss(sec) {
+    sec = Math.max(0, Math.ceil(sec));
+    var s = ('0' + sec % 60).slice(-2), m = Math.floor(sec / 60);
+    if (m >= 60) return Math.floor(m / 60) + ':' + ('0' + m % 60).slice(-2) + ':' + s;   // 1시간 이상: H:MM:SS
+    return ('0' + m).slice(-2) + ':' + s;
+  }
   function $(id) { return document.getElementById(id); }
 
-  var rowEls = [];
+  var rowEls = [], anchors = [], blocks = [];
+  function wt(s) { return s.kg != null ? s.kg + 'kg' : s.label; }
   function buildList() {
-    var list = $('list'); list.innerHTML = ''; rowEls = [];
-    var lastBlock = null, box = document.createElement('div'); box.id = 'listin'; list.appendChild(box);
-    S.forEach(function (s) {
-      if (s.block !== lastBlock) { var b = document.createElement('div'); b.className = 'blk'; b.textContent = s.block; box.appendChild(b); lastBlock = s.block; }
+    var list = $('list'); list.innerHTML = ''; rowEls = []; anchors = []; blocks = [];
+    var lastBlock = null, card = null, bl = null, box = document.createElement('div'); box.id = 'listin'; list.appendChild(box);
+    S.forEach(function (s, i) {
+      if (s.block !== lastBlock) {
+        card = document.createElement('div'); card.className = 'card'; box.appendChild(card);
+        var h = document.createElement('div'); h.className = 'bh'; h.innerHTML = '<span></span><em></em>';
+        h.firstChild.textContent = s.block; card.appendChild(h); anchors.push(card);
+        bl = { em: h.lastChild, idx: [] }; blocks.push(bl); lastBlock = s.block;
+      }
       var r = document.createElement('div'); r.className = 'row';
-      r.innerHTML = '<span class="t"></span><span class="w"></span><span class="k"></span>';
-      r.querySelector('.w').textContent = weight(s);
-      box.appendChild(r); rowEls.push(r);
+      r.innerHTML = '<span class="t"></span><span class="w"></span><span class="r"></span><span class="k"></span>';
+      r.querySelector('.w').textContent = wt(s);
+      r.querySelector('.r').textContent = '× ' + s.reps;
+      card.appendChild(r); rowEls.push(r); anchors.push(r); bl.idx.push(i);
     });
   }
 
@@ -140,12 +173,29 @@
     while (el.scrollWidth > el.clientWidth && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
   }
 
+  // 동작(큐) 박스: 박스를 넘치면 글자 크기를 줄인다 (기본 5.5%, 최소 3.2%)
+  function fitCue(el, text) {
+    if (el.getAttribute('data-t') === text) return;
+    el.setAttribute('data-t', text); el.textContent = '';
+    if (!text) return;
+    var sp = document.createElement('span'); sp.textContent = text; el.appendChild(sp);
+    var px = window.innerHeight * 0.055, min = window.innerHeight * 0.032;
+    el.style.fontSize = px + 'px';
+    while (sp.offsetHeight > el.clientHeight - 2 && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
+  }
+
   var lastCur = -2;
   function scrollTo(cur) {
     var list = $('list'), inner = $('listin');
     var max = Math.max(0, inner.scrollHeight - list.clientHeight);
-    var want = cur >= 0 ? rowEls[cur].offsetTop - list.clientHeight * 0.35 : 0;
-    inner.style.transform = 'translateY(' + (-Math.max(0, Math.min(want, max))) + 'px)';
+    var want = cur >= 0 ? rowEls[cur].offsetTop - list.clientHeight * 0.2 : 0;
+    want = Math.max(0, Math.min(want, max));
+    // 행/블록 제목 경계에 맞춰 스크롤해서 위쪽 글자가 반쯤 잘리지 않게 한다
+    var kids = anchors, snap = 0;
+    for (var k = 0; k < kids.length; k++) { if (kids[k].offsetTop >= want) { snap = kids[k].offsetTop; break; } snap = max; }
+    snap = Math.min(snap, max);
+    if (cur >= 0 && rowEls[cur].offsetTop - snap > list.clientHeight - rowEls[cur].offsetHeight) snap = want;
+    inner.style.transform = 'translateY(' + (-snap) + 'px)';
   }
 
   function render() {
@@ -155,12 +205,20 @@
     var ended = cur === n - 1 && now >= endAdj;
     document.body.classList.toggle('ended', ended);
 
+    var doneN = 0;
     for (var j = 0; j < n; j++) {
       var done = j < cur || (j === cur && ended);
-      rowEls[j].className = 'row' + (done ? ' done' : j === cur ? ' cur' : '');
+      if (done) doneN++;
+      rowEls[j].className = 'row' + (done ? ' done' : j === cur ? ' cur' : j === nxt ? ' next' : '');
       rowEls[j].querySelector('.t').textContent = hm(start(j));
-      rowEls[j].querySelector('.k').textContent = done ? '✓' : '';
+      rowEls[j].querySelector('.k').innerHTML = done ? '✓' : j === cur ? '<b>진행 중</b>' : j === nxt ? '<b>다음</b>' : '';
     }
+    blocks.forEach(function (b) {
+      var d = b.idx.filter(function (x) { return x < cur || (x === cur && ended); }).length;
+      b.em.textContent = d + '/' + b.idx.length;
+    });
+    $('pcount').textContent = '완료 ' + doneN + '/' + n;
+    $('prog').firstElementChild.style.width = (doneN / n * 100) + '%';
     if (cur !== lastCur) {
       scrollTo(cur);
       if (lastCur !== -2 && cur > lastCur && cur >= 0) beep(880, 0.35);   // 세트 시작 신호음
@@ -169,26 +227,35 @@
     if (ended) { $('finsum').textContent = '완료 세트 ' + n + '/' + n; return; }
 
     $('cur').textContent = cur >= 0 ? '진행 중: ' + name(S[cur]) : '대기 중';
+    $('curcue').textContent = cur >= 0 && S[cur].cue ? '지금 큐: ' + S[cur].cue : '';
     var rem, frac;
     if (nxt < n) {
-      $('nextlab').textContent = '다음 · ' + hm(start(nxt)) + ' 시작';
+      var chg = cur < 0 || S[cur].block !== S[nxt].block;       // 블록이 바뀌면 알림
+      $('nextlab').innerHTML = '다음 · ' + hm(start(nxt)) + ' 시작' + (chg ? '<b>새 블록 · ' + S[nxt].block + '</b>' : '');
       fitNext($('next'), name(S[nxt]));
-      $('cue').textContent = S[nxt].cue || '';
+      fitCue($('cue'), (S[nxt].setup ? '준비: ' + S[nxt].setup + (S[nxt].cue ? '\n' : '') : '') + (S[nxt].cue || ''));
       rem = start(nxt) - now;
       var from = cur >= 0 ? start(cur) : start(nxt) - 600;
       frac = (now - from) / (start(nxt) - from);
       var aft = nxt + 1 < n ? S[nxt + 1] : null;
-      $('after').textContent = aft ? '그다음: ' + weight(aft) + ' · ' + hm(start(nxt + 1)) : '그다음: 없음 (마지막 세트)';
+      $('after').textContent = aft ? '그다음: ' + name(aft) + ' · ' + hm(start(nxt + 1)) : '그다음: 없음 (마지막 세트)';
     } else {
       $('nextlab').textContent = '마지막 세트 진행 중';
       fitNext($('next'), '종료까지');
-      $('cue').textContent = S[cur].cue || '';
+      fitCue($('cue'), S[cur].cue || '');
       rem = endAdj - now;
       frac = (now - start(cur)) / (endAdj - start(cur));
       $('after').textContent = '';
     }
     var cls = rem < 10 ? 'bad' : rem < 60 ? 'warn' : '';
-    $('count').textContent = mmss(rem);
+    var ct = mmss(rem), ce = $('count');
+    if (ce.getAttribute('data-n') !== String(ct.length)) {      // 자릿수가 바뀔 때만 글자 크기 재조정 (기본 24%)
+      ce.setAttribute('data-n', ct.length); ce.textContent = ct;
+      var cpx = window.innerHeight * 0.24, cmin = window.innerHeight * 0.1;
+      ce.style.fontSize = cpx + 'px';
+      while (ce.scrollWidth > ce.clientWidth && cpx > cmin) { cpx -= 2; ce.style.fontSize = cpx + 'px'; }
+    }
+    ce.textContent = ct;
     $('count').className = cls; $('bar').className = cls;
     $('bar').firstElementChild.style.width = Math.max(0, Math.min(1, frac)) * 100 + '%';
     $('stop').textContent = prog.stopRule ? '중단 기준: ' + prog.stopRule : '';
@@ -221,6 +288,18 @@
     b.addEventListener('click', function () { adjust(parseInt(b.getAttribute('data-d'), 10)); });
   });
   $('go').addEventListener('click', startNow);
+  // 리허설: 첫 세트 10초 전 시각으로 되돌려 처음부터 다시 진행. 다시 누르면 실시간.
+  $('reh').addEventListener('click', function () {
+    if (virt !== null) { virt = null; }
+    else {
+      virt = S[0].base - 10; t0 = Date.now();
+      off = S.map(function () { return 0; }); saveOff();
+    }
+    lastCur = -2; $('reh').textContent = virt !== null ? '실시간' : '리허설';
+    document.body.classList.toggle('rehearsal', virt !== null);
+    scrollTo(-1); render();
+  });
+  if (virt !== null) { $('reh').textContent = '실시간'; document.body.classList.add('rehearsal'); }
   $('imp').addEventListener('click', function () { if (window.Android && Android.importProgram) Android.importProgram(); });
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
@@ -230,8 +309,11 @@
     endSec = parseHMS(p.end);
     loadOff();
     var d = new Date(p.date + 'T00:00:00'), wd = '일월화수목금토'.charAt(d.getDay());
-    $('head').textContent = (d.getMonth() + 1) + '/' + d.getDate() + '(' + wd + ') · D-' + p.dday + ' · ' + (p.start || p.sets[0].start).replace(/^0/, '') + '~' + p.end.replace(/^0/, '');
-    $('title').textContent = p.title || '';
+    $('date').textContent = (d.getMonth() + 1) + '/' + d.getDate() + '(' + wd + ')';
+    $('chip').textContent = p.dday != null ? 'D-' + p.dday : '';
+    $('chip').style.display = p.dday != null ? '' : 'none';
+    $('rng').textContent = (p.start || p.sets[0].start).replace(/^0/, '') + '~' + p.end.replace(/^0/, '');
+    $('ttl').textContent = p.title || '';
     buildList(); render();
     setInterval(render, 200);
   });
