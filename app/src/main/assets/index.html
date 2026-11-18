@@ -240,7 +240,7 @@
     while (sp.offsetHeight > el.clientHeight - 2 && px > min) { px -= 1; el.style.fontSize = px + 'px'; }
   }
 
-  var lastCur = -2;
+  var lastCur = -2, lastTick = '';
   function scrollTo(cur) {
     var list = $('list'), inner = $('listin');
     var max = Math.max(0, inner.scrollHeight - list.clientHeight);
@@ -292,6 +292,8 @@
       fitNext($('next'), name(S[nxt]));
       fitCue($('cue'), (S[nxt].setup ? '준비: ' + S[nxt].setup + (S[nxt].cue ? '\n' : '') : '') + (S[nxt].cue || ''));
       rem = start(nxt) - now;
+      var tk = Math.ceil(rem);                                    // 시작 3·2·1초 전 짧은 신호음 (초마다 한 번)
+      if (tk >= 1 && tk <= 3 && lastTick !== nxt + ':' + tk) { lastTick = nxt + ':' + tk; beep(660, 0.12); }
       var from = cur >= 0 ? start(cur) : start(nxt) - 600;
       frac = (now - from) / (start(nxt) - from);
       var aft = nxt + 1 < n ? S[nxt + 1] : null;
@@ -327,7 +329,9 @@
   }
   document.addEventListener('touchstart', unlockAudio, true);
   document.addEventListener('click', unlockAudio, true);
+  window.__beeps = [];                                            // 디버그: 울린 신호음 기록
   function beep(freq, dur) {
+    window.__beeps.push(freq);
     try {
       ac = ac || new (window.AudioContext || window.webkitAudioContext)();
       if (ac.state === 'suspended') ac.resume();
