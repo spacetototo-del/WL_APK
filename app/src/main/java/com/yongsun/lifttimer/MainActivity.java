@@ -127,6 +127,13 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** 가져온 파일을 지우고 기본(assets) 프로그램으로 되돌린다. */
+        @JavascriptInterface
+        public void resetProgram() {
+            new File(getFilesDir(), "program.json").delete();
+            runOnUiThread(() -> web.reload());
+        }
+
         @JavascriptInterface
         public void importProgram() {
             runOnUiThread(() -> {

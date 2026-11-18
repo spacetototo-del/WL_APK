@@ -24,8 +24,9 @@
   #pcount { font-weight:700; font-variant-numeric:tabular-nums; }
   #prog { height:1vh; background:var(--panel); border-radius:.5vh; overflow:hidden; }
   #prog i { display:block; height:100%; width:0; background:var(--ok); transition:width .4s; }
-  #list { flex:1; overflow:hidden; position:relative; margin-top:1.4vh; }
-  #listin { position:relative; transition:transform .4s; }
+  #list { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; position:relative; margin-top:1.4vh; scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  #list::-webkit-scrollbar { display:none; }
+  #listin { position:relative; padding-bottom:2vh; }
   .card { background:var(--panel); border-radius:1.6vh; padding:.7vh .7vw .6vh; margin-bottom:1.3vh; }
   .bh { display:flex; align-items:baseline; justify-content:space-between; font-size:2.7vh; font-weight:800; padding:.7vh .6vw .5vh; }
   .bh em { font-style:normal; font-size:2.3vh; color:var(--dim); font-weight:700; font-variant-numeric:tabular-nums; }
@@ -67,12 +68,18 @@
   #fin b { display:block; font-size:8vh; margin-top:10vh; } #fin span { display:block; font-size:4vh; margin-top:3vh; color:var(--dim); }
   body.ended #main { display:none; } body.ended #fin { display:block; }
   #err { padding:4vh; font-size:4vh; color:var(--bad); }
+  #err .item { font-size:2.8vh; color:var(--fg); margin-top:1vh; font-weight:500; }
+  #err .eb { font:inherit; font-size:3vh; padding:1.6vh 2vw; margin:3vh 1.5vw 0 0; border-radius:1vh; border:.3vh solid var(--line); background:var(--panel); color:var(--fg); }
+  #right { position:relative; }
+  #warn { display:none; font-size:2.6vh; font-weight:800; background:var(--bad); color:#fff; padding:.3vh 1vw; border-radius:5vh; }
+  #undo { display:none; position:absolute; right:1.6vw; bottom:11.5vh; align-items:center; gap:1.4vw; background:var(--fg); color:var(--bg); padding:1.1vh 1.2vw 1.1vh 1.6vw; border-radius:1.4vh; font-size:2.6vh; font-weight:700; box-shadow:0 .6vh 2vh rgba(0,0,0,.35); }
+  #undo button { font:inherit; font-weight:800; background:var(--hi); color:#111; border:0; padding:.9vh 1.6vw; border-radius:1vh; }
 </style>
 </head>
 <body>
 <div id="app">
   <section id="left">
-    <div id="top"><span id="date">-</span><span id="chip"></span><span id="rng"></span></div>
+    <div id="top"><span id="date">-</span><span id="chip"></span><span id="warn">오늘 아님</span><span id="rng"></span></div>
     <div id="title"><span id="ttl"></span><span id="pcount"></span></div>
     <div id="prog"><i></i></div>
     <div id="list"></div>
@@ -90,6 +97,7 @@
       <div id="stop"></div>
     </div>
     <div id="fin"><b>종료 · 수고하셨습니다</b><span id="finsum"></span></div>
+    <div id="undo"><span>시간이 조정됨</span><button id="undoBtn">되돌리기</button></div>
     <div id="ctrl">
       <button data-d="-60">-1분</button>
       <button data-d="60">+1분</button>
@@ -115,16 +123,63 @@
   }
   window.__setVirt = function (s) { virt = parseHMS(s); t0 = Date.now(); };   // 디버그용
 
-  var prog = null, off = [];
-  function fail(m) { document.getElementById('app').innerHTML = '<div id="err">' + m + '</div>'; }
-  function loadProgram(cb) {
+  var prog = null, off = [], sig = '';
+
+  // 오류 화면: 원인을 보여주고, 앱에서는 "다시 가져오기 / 기본 프로그램 복원" 버튼을 둔다
+  function fail(msg, list) {
+    var a = document.getElementById('app'); a.innerHTML = '';
+    var d = document.createElement('div'); d.id = 'err';
+    var h = document.createElement('div'); h.style.fontWeight = '800'; h.textContent = msg; d.appendChild(h);
+    (list || []).forEach(function (t) { var x = document.createElement('div'); x.className = 'item'; x.textContent = '· ' + t; d.appendChild(x); });
+    if (window.Android) {
+      var b1 = document.createElement('button'); b1.className = 'eb'; b1.textContent = '파일 다시 가져오기';
+      b1.addEventListener('click', function () { if (Android.importProgram) Android.importProgram(); });
+      var b2 = document.createElement('button'); b2.className = 'eb'; b2.textContent = '기본 프로그램으로 복원';
+      b2.addEventListener('click', function () { if (Android.resetProgram) Android.resetProgram(); });
+      d.appendChild(b1); d.appendChild(b2);
+    }
+    a.appendChild(d);
+  }
+
+  // program.json 형식 검사: 틀린 곳을 한글로 알려 준다 (최대 8개)
+  function validate(p) {
+    var e = [], HM = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!p || typeof p !== 'object') return ['최상위가 JSON 객체가 아닙니다'];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) e.push('date가 YYYY-MM-DD 형식이 아닙니다');
+    var endOk = HM.test(p.end || '');
+    if (!endOk) e.push('end가 24시간제 HH:MM 형식이 아닙니다 (예: "21:00")');
+    if (!Array.isArray(p.sets) || !p.sets.length) { e.push('sets가 비어 있거나 배열이 아닙니다'); return e; }
+    var prev = -1;
+    p.sets.forEach(function (s, i) {
+      var w = (i + 1) + '번째 세트: ';
+      if (!s || typeof s !== 'object') { e.push(w + '객체가 아닙니다'); return; }
+      if (!s.block) e.push(w + 'block이 없습니다');
+      if (!HM.test(s.start || '')) e.push(w + 'start가 24시간제 HH:MM 형식이 아닙니다 (' + s.start + ')');
+      else { var t = parseHMS(s.start); if (t <= prev) e.push(w + 'start가 이전 세트보다 빠르거나 같습니다 (' + s.start + ')'); prev = t; }
+      if (!(s.reps > 0 && s.reps % 1 === 0)) e.push(w + 'reps가 1 이상의 정수가 아닙니다');
+      if (typeof s.kg !== 'number' && !s.label) e.push(w + 'kg(숫자) 또는 label이 필요합니다');
+    });
+    if (endOk && prev >= 0 && parseHMS(p.end) <= prev) e.push('end가 마지막 세트 시작 시각보다 늦어야 합니다');
+    return e.slice(0, 8);
+  }
+  function handleProgram(p) {
+    var errs = validate(p);
+    if (errs.length) { fail('program.json 내용 오류', errs); return; }
+    start0(p);
+  }
+  function loadProgram() {
     if (window.Android && Android.getProgram) {
-      try { cb(JSON.parse(Android.getProgram())); } catch (e) { fail('program.json 오류'); }
+      var p;
+      try { p = JSON.parse(Android.getProgram()); } catch (e) { fail('program.json 문법 오류 (JSON 형식이 아닙니다)', [String(e.message || e)]); return; }
+      handleProgram(p);
     } else {
-      fetch('program.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(cb).catch(function () { fail('program.json 로드 실패'); });
+      fetch('program.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(handleProgram, function () { fail('program.json 로드 실패'); });
     }
   }
-  function key() { return 'adj-' + prog.date; }
+  // 시간 조정 저장 키: 날짜 + 파일 내용(해시) + 리허설 여부. 파일을 고치면 옛 조정값이 섞이지 않고, 리허설은 실제와 분리된다.
+  function hashOf(s) { var h = 5381, i; for (i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function key() { return (virt !== null ? 'rh-' : 'adj-') + prog.date + '-' + sig; }
+  function todayStr() { var d = new Date(), z = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
   function saveOff() { try { localStorage.setItem(key(), JSON.stringify(off)); } catch (e) {} }
   function loadOff() {
     off = prog.sets.map(function () { return 0; });
@@ -175,8 +230,9 @@
 
   // 동작(큐) 박스: 박스를 넘치면 글자 크기를 줄인다 (기본 5.5%, 최소 3.2%)
   function fitCue(el, text) {
-    if (el.getAttribute('data-t') === text) return;
-    el.setAttribute('data-t', text); el.textContent = '';
+    var k = text + '|' + el.clientHeight;                       // 박스 높이가 바뀌어도 다시 맞춘다
+    if (el.getAttribute('data-t') === k) return;
+    el.setAttribute('data-t', k); el.textContent = '';
     if (!text) return;
     var sp = document.createElement('span'); sp.textContent = text; el.appendChild(sp);
     var px = window.innerHeight * 0.055, min = window.innerHeight * 0.032;
@@ -195,7 +251,7 @@
     for (var k = 0; k < kids.length; k++) { if (kids[k].offsetTop >= want) { snap = kids[k].offsetTop; break; } snap = max; }
     snap = Math.min(snap, max);
     if (cur >= 0 && rowEls[cur].offsetTop - snap > list.clientHeight - rowEls[cur].offsetHeight) snap = want;
-    inner.style.transform = 'translateY(' + (-snap) + 'px)';
+    list.scrollTo({ top: snap, behavior: lastCur === -2 ? 'auto' : 'smooth' });   // 직접 스크롤도 가능, 세트가 바뀔 때만 자동 이동
   }
 
   function render() {
@@ -224,6 +280,7 @@
       if (lastCur !== -2 && cur > lastCur && cur >= 0) beep(880, 0.35);   // 세트 시작 신호음
       lastCur = cur;
     }
+    $('warn').style.display = (virt === null && prog.date !== todayStr()) ? 'inline-block' : 'none';   // 어제 파일 등 날짜 불일치 경고
     if (ended) { $('finsum').textContent = '완료 세트 ' + n + '/' + n; return; }
 
     $('cur').textContent = cur >= 0 ? '진행 중: ' + name(S[cur]) : '대기 중';
@@ -262,17 +319,39 @@
   }
 
   var ac = null;
+  function unlockAudio() {          // 자동재생 제한 대비: 첫 터치에서 오디오를 미리 활성화
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) {}
+  }
+  document.addEventListener('touchstart', unlockAudio, true);
+  document.addEventListener('click', unlockAudio, true);
   function beep(freq, dur) {
     try {
       ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
       var o = ac.createOscillator(), g = ac.createGain();
       o.frequency.value = freq; g.gain.value = 0.4;
       o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
     } catch (e) {}
   }
 
+  // 되돌리기: 조정 직전 상태를 6초간 보관
+  var lastOff = null, undoTimer = null;
+  function hideUndo() { clearTimeout(undoTimer); lastOff = null; $('undo').style.display = 'none'; }
+  function pushUndo() {
+    lastOff = off.slice(); $('undo').style.display = 'flex';
+    clearTimeout(undoTimer); undoTimer = setTimeout(hideUndo, 6000);
+  }
+  $('undoBtn').addEventListener('click', function () {
+    if (lastOff) { off = lastOff; saveOff(); render(); }
+    hideUndo();
+  });
+
   function adjust(delta) {                       // 아직 시작 안 한 세트에만 적용
     var now = nowSec();
+    pushUndo();
     for (var i = 0; i < S.length; i++) if (start(i) > now) off[i] += delta;
     saveOff(); render();
   }
@@ -280,6 +359,7 @@
     var t = nowSec(), nxt = -1, i;
     for (i = 0; i < S.length; i++) if (start(i) > t) { nxt = i; break; }
     if (nxt < 0) return;
+    pushUndo();
     var d = Math.ceil(t) - start(nxt);
     for (i = nxt; i < S.length; i++) off[i] += d;
     saveOff(); render();
@@ -290,9 +370,10 @@
   $('go').addEventListener('click', startNow);
   // 리허설: 첫 세트 10초 전 시각으로 되돌려 처음부터 다시 진행. 다시 누르면 실시간.
   $('reh').addEventListener('click', function () {
-    if (virt !== null) { virt = null; }
+    hideUndo();
+    if (virt !== null) { virt = null; loadOff(); }            // 실시간 복귀: 실제 조정값 복원
     else {
-      virt = S[0].base - 10; t0 = Date.now();
+      virt = S[0].base - 10; t0 = Date.now();                  // 리허설: 별도 저장소(rh-)를 0으로 시작
       off = S.map(function () { return 0; }); saveOff();
     }
     lastCur = -2; $('reh').textContent = virt !== null ? '실시간' : '리허설';
@@ -303,8 +384,9 @@
   $('imp').addEventListener('click', function () { if (window.Android && Android.importProgram) Android.importProgram(); });
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  loadProgram(function (p) {
+  function start0(p) {
     prog = p;
+    sig = hashOf(JSON.stringify(p.sets));
     S = p.sets.map(function (s) { var o = {}; for (var k in s) o[k] = s[k]; o.base = parseHMS(s.start); return o; });
     endSec = parseHMS(p.end);
     loadOff();
@@ -316,7 +398,13 @@
     $('ttl').textContent = p.title || '';
     buildList(); render();
     setInterval(render, 200);
+  }
+  // 화면 크기가 바뀌면 글자 크기 캐시를 비우고 다시 계산 (px 기준 자동 축소 때문)
+  window.addEventListener('resize', function () {
+    ['next', 'cue', 'count'].forEach(function (id) { var el = $(id); el.removeAttribute('data-t'); el.removeAttribute('data-n'); });
+    if (prog) { lastCur = -2; render(); }
   });
+  loadProgram();
 })();
 </script>
 </body>
